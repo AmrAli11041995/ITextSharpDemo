@@ -1,0 +1,6 @@
+@ITextSharpDemo_HostAddress = http://localhost:5228
+
+GET {{ITextSharpDemo_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
