@@ -179,30 +179,6 @@ namespace ITextSharpDemo.PDFHelpers
         };
             FillPdfForm(inputFilePath, outputFilePath, data, fieldMapping2);
 
-            // Open the existing PDF document
-            //using (PdfReader reader = new PdfReader(inputFilePath))
-            //{
-            //    // Output stream for the modified PDF
-            //    using (FileStream stream = new FileStream(outputFilePath, FileMode.Create))
-            //    {
-            //        // PdfStamper to modify the PDF
-            //        using (PdfStamper stamper = new PdfStamper(reader, stream))
-            //        {
-            //            // Access the form fields
-            //            AcroFields formFields = stamper.AcroFields;
-            //            var t = formFields.Fields.Keys.ToList();
-            //            // Modify specific fields by their names
-
-
-            //            //formFields.SetField("DateField", "2023-01-01");
-            //            //formFields.SetField("AmountField", "$1000");
-
-            //            // Optionally, set fields as read-only
-            //            stamper.FormFlattening = true;
-            //        }
-            //    }
-            //}
-
             Console.WriteLine("PDF form filled and saved as " + outputFilePath);
 
         }
@@ -251,47 +227,7 @@ namespace ITextSharpDemo.PDFHelpers
 
             return result;
         }
-        //public static Dictionary<string, object> Flatten(object obj, string parentKey = "", string separator = ".")
-        //{
-        //    var result = new Dictionary<string, object>();
-
-        //    if (obj == null) return result;
-        //    int count = 0;
-        //    var props = obj.GetType().GetProperties();
-        //    foreach (PropertyInfo property in obj.GetType().GetProperties())
-        //    {
-        //        var props1 = obj.GetType().GetProperties();
-
-        //        var propName = property.Name;
-        //        var propType = property.PropertyType;
-        //        var propValue = property.GetValue(obj);
-        //        var reftype = property.ReflectedType.Name;
-        //        if (reftype.ToLower().Contains("list"))
-        //        {
-        //             propName = string.IsNullOrEmpty(parentKey) ? property.Name : parentKey  + $"[{count}]" + separator + propName ;
-        //            count++;
-        //        }
-        //        else
-        //        {
-        //             propName = string.IsNullOrEmpty(parentKey) ? property.Name : parentKey + separator + property.Name;
-        //        }
-        //        if (propValue != null && !property.PropertyType.IsPrimitive && property.PropertyType != typeof(string) && property.PropertyType.IsClass)
-        //        {
-        //            // Recursively flatten nested objects
-        //            foreach (var innerProp in Flatten(propValue, propName, separator))
-        //            {
-        //                result[innerProp.Key] = innerProp.Value;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            result[propName] = propValue;
-        //        }
-        //    }
-
-        //    return result;
-        //}
-
+     
         public static void FillPdfForm(string inputFilePath, string outputFilePath, object data, Dictionary<string, string> fieldMapping)
         {
             using (PdfReader reader = new PdfReader(inputFilePath))
