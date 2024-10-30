@@ -1,6 +1,10 @@
 ﻿using iTextSharp.text.pdf;
 using iTextSharp.text;
 using iTextSharp.text.pdf.parser;
+//using static Org.BouncyCastle.Bcpg.Attr.ImageAttrib;
+using System.Reflection;
+using System.Collections;
+//using static System.Net.Mime.MediaTypeNames;
 //using static System.Net.Mime.MediaTypeNames;
 
 namespace ITextSharpDemo.PDFHelpers
@@ -42,7 +46,8 @@ namespace ITextSharpDemo.PDFHelpers
             }
         }
 
-        public static void CreateFormFieldsPDF() {
+        public static void CreateFormFieldsPDF()
+        {
             string outputFilePath = "output_with_form_fields.pdf";
 
             // Create a new PDF document
@@ -72,7 +77,7 @@ namespace ITextSharpDemo.PDFHelpers
                 radioButton2.CheckType = RadioCheckField.TYPE_CIRCLE;
                 writer.AddAnnotation(radioButton2.RadioField);
 
-                
+
                 document.Close();
             }
 
@@ -123,22 +128,183 @@ namespace ITextSharpDemo.PDFHelpers
             string inputFilePath = "P1.pdf";
             string outputFilePath = "output.pdf";
 
+
+            // Sample data object
+            var data = new
+            {
+                HomeTeamName = "AlAhly",
+                AwayTeamName = "Zamalek",
+                HomeScore = "6",
+                AwayScore = "1",
+
+            };
+
+
+
+            var obj = new DataTeams() { 
+                TeamA= new Team(){ 
+                    color="red",
+                    Name = "AlAhly" , 
+                    Players = new List<Player> { 
+                        new Player() { Name = "Ahmed",Position="GK" , ShirtNumber = "1"}, 
+                        new Player() { Name = "Ali",Position="DF" , ShirtNumber = "10"} 
+                    },
+                    Img_FlagPath="D:\\ahly.png" 
+                } , 
+                TeamB = new Team (){
+                    color="white",
+                    Name = "Zamalek" ,
+                    Players = new List<Player>{
+                        new Player() { Name = "Gabaski",Position="GK" , ShirtNumber = "1"},
+                        new Player() { Name = "Omar Gaber",Position="DF" , ShirtNumber = "4"}
+                    },
+                    Img_FlagPath="D:\\zamalek.png"
+                }
+            };
+
+            var flattened = Flatten(obj);
+
+            foreach (var kvp in flattened)
+            {
+                Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+            }
+
+            // Define a dictionary to map form field names to property names
+            var fieldMapping2 = new Dictionary<string, string>
+        {
+            { "TeamA_N[0]", "HomeTeamName" },
+            { "TeamB_N[0]", "AwayTeamName" },
+            { "TeamA1_Score[0]", "HomeScore" },
+            { "TeamB_Score[0]", "AwayScore" }
+        };
+            FillPdfForm(inputFilePath, outputFilePath, data, fieldMapping2);
+
             // Open the existing PDF document
+            //using (PdfReader reader = new PdfReader(inputFilePath))
+            //{
+            //    // Output stream for the modified PDF
+            //    using (FileStream stream = new FileStream(outputFilePath, FileMode.Create))
+            //    {
+            //        // PdfStamper to modify the PDF
+            //        using (PdfStamper stamper = new PdfStamper(reader, stream))
+            //        {
+            //            // Access the form fields
+            //            AcroFields formFields = stamper.AcroFields;
+            //            var t = formFields.Fields.Keys.ToList();
+            //            // Modify specific fields by their names
+
+
+            //            //formFields.SetField("DateField", "2023-01-01");
+            //            //formFields.SetField("AmountField", "$1000");
+
+            //            // Optionally, set fields as read-only
+            //            stamper.FormFlattening = true;
+            //        }
+            //    }
+            //}
+
+            Console.WriteLine("PDF form filled and saved as " + outputFilePath);
+
+        }
+        public static Dictionary<string, object> Flatten(object obj, string parentKey = "", string separator = "_")
+        {
+            var result = new Dictionary<string, object>();
+
+            if (obj == null) return result;
+
+            // If the object is a list or array, handle each element with an index
+            if (obj is IEnumerable enumerable && !(obj is string))
+            {
+                int index = 0;
+                foreach (var item in enumerable)
+                {
+                    var indexedKey = $"{parentKey}{separator}{index}";
+                    foreach (var innerKvp in Flatten(item, indexedKey, separator))
+                    {
+                        result[innerKvp.Key] = innerKvp.Value;
+                    }
+                    index++;
+                }
+            }
+            else
+            {
+                // Handle properties of a single object
+                foreach (PropertyInfo property in obj.GetType().GetProperties())
+                {
+                    var propValue = property.GetValue(obj);
+                    var propName = string.IsNullOrEmpty(parentKey) ? property.Name : parentKey + separator + property.Name;
+
+                    if (propValue != null && !property.PropertyType.IsPrimitive && property.PropertyType != typeof(string) && property.PropertyType.IsClass)
+                    {
+                        // Recursively flatten nested objects or collections
+                        foreach (var innerKvp in Flatten(propValue, propName, separator))
+                        {
+                            result[innerKvp.Key] = innerKvp.Value;
+                        }
+                    }
+                    else
+                    {
+                        result[propName] = propValue;
+                    }
+                }
+            }
+
+            return result;
+        }
+        //public static Dictionary<string, object> Flatten(object obj, string parentKey = "", string separator = ".")
+        //{
+        //    var result = new Dictionary<string, object>();
+
+        //    if (obj == null) return result;
+        //    int count = 0;
+        //    var props = obj.GetType().GetProperties();
+        //    foreach (PropertyInfo property in obj.GetType().GetProperties())
+        //    {
+        //        var props1 = obj.GetType().GetProperties();
+
+        //        var propName = property.Name;
+        //        var propType = property.PropertyType;
+        //        var propValue = property.GetValue(obj);
+        //        var reftype = property.ReflectedType.Name;
+        //        if (reftype.ToLower().Contains("list"))
+        //        {
+        //             propName = string.IsNullOrEmpty(parentKey) ? property.Name : parentKey  + $"[{count}]" + separator + propName ;
+        //            count++;
+        //        }
+        //        else
+        //        {
+        //             propName = string.IsNullOrEmpty(parentKey) ? property.Name : parentKey + separator + property.Name;
+        //        }
+        //        if (propValue != null && !property.PropertyType.IsPrimitive && property.PropertyType != typeof(string) && property.PropertyType.IsClass)
+        //        {
+        //            // Recursively flatten nested objects
+        //            foreach (var innerProp in Flatten(propValue, propName, separator))
+        //            {
+        //                result[innerProp.Key] = innerProp.Value;
+        //            }
+        //        }
+        //        else
+        //        {
+        //            result[propName] = propValue;
+        //        }
+        //    }
+
+        //    return result;
+        //}
+
+        public static void FillPdfForm(string inputFilePath, string outputFilePath, object data, Dictionary<string, string> fieldMapping)
+        {
             using (PdfReader reader = new PdfReader(inputFilePath))
             {
-                // Output stream for the modified PDF
-                using (FileStream stream = new FileStream(outputFilePath, FileMode.Create))
+                using (FileStream output = new FileStream(outputFilePath, FileMode.Create))
                 {
-                    // PdfStamper to modify the PDF
-                    using (PdfStamper stamper = new PdfStamper(reader, stream))
+                    using (PdfStamper stamper = new PdfStamper(reader, output))
                     {
-                        // Access the form fields
+                        Image image = Image.GetInstance("D:\\ahly.png");
+                        Image img = Image.GetInstance("D:\\zamalek.png");
+
                         AcroFields formFields = stamper.AcroFields;
-
-                        // Modify specific fields by their names
-                        Image image = Image.GetInstance("D:\\dogs.jpg");
-                        Image img = Image.GetInstance("D:\\user-pic.jpg");
-
+                        var x = formFields.Fields.First().GetType();
 
                         //formFields.SetField("FlagT_A[0]", "Amr Salah");
                         PushbuttonField button = stamper.AcroFields.GetNewPushbuttonFromField("FlagT_A[0]");
@@ -148,19 +314,51 @@ namespace ITextSharpDemo.PDFHelpers
                         PushbuttonField button2 = stamper.AcroFields.GetNewPushbuttonFromField("FlagT_B[0]");
                         button2.Image = img;
                         stamper.AcroFields.ReplacePushbuttonField("FlagT_B[0]", button2.Field);
-                        //formFields.SetField("DateField", "2023-01-01");
-                        //formFields.SetField("AmountField", "$1000");
+                        // Iterate over the field mapping
+                        foreach (var entry in fieldMapping)
+                        {
+                            string fieldName = entry.Key;     // Form field name in PDF
+                            string propertyName = entry.Value; // Property name in the object
 
-                        // Optionally, set fields as read-only
-                        stamper.FormFlattening = true;
+                            // Get the property info from the data object
+                            PropertyInfo prop = data.GetType().GetProperty(propertyName);
+                            if (prop != null)
+                            {
+                                object value = prop.GetValue(data, null);
+                                if (value != null && formFields.Fields.ContainsKey(fieldName))
+                                {
+                                    formFields.SetField(fieldName, value.ToString());
+                                }
+                            }
+                        }
+
+                        stamper.FormFlattening = true; // Flatten form to prevent further editing
                     }
                 }
             }
 
-            Console.WriteLine("PDF form filled and saved as " + outputFilePath);
-
         }
-        
-      
     }
+
+    public class DataTeams
+    {
+        public Team TeamA { get; set; }
+        public Team TeamB { get; set; }
+    }
+    public class Team
+    {
+        public string Img_FlagPath { get; set; }
+        public string Name { get; set; }
+        public string color { get; set; }
+        public List<Player> Players { get; set; }
+    }
+
+  
+    public class Player
+    {
+        public string Name { get; set; }
+        public string ShirtNumber { get; set; }
+        public string Position { get; set; }
+    }
+   
 }
